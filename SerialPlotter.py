@@ -1,4 +1,3 @@
-from bluepy import btle
 import numpy as np
 import pyqtgraph as pg
 from collections import deque
@@ -6,7 +5,6 @@ from PyQt5 import QtWidgets, QtCore
 from pyqtgraph import PlotWidget, plot
 import time
 import serial 
-import PIL
 
 
         
