@@ -29,7 +29,7 @@ void setup() {
   muca.useRawData(true); // If you use the raw data, the interrupt is not working
 
   delay(50);
-  muca.setGain(2);
+  muca.setGain(45);
 
 }
 

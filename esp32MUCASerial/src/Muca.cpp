@@ -40,7 +40,7 @@ byte Muca::setRegister(byte reg, byte val) {
   Wire.write(reg);
   Wire.write(val); 
 
-  return Wire.endTransmission(true);;
+  return Wire.endTransmission(true);
 }
 
 
