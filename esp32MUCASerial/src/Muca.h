@@ -1,7 +1,3 @@
-//https://www.newhavendisplay.com/appnotes/datasheets/touchpanel/FT5x16_registers.pdf
-//https://www.buydisplay.com/download/ic/FT5206.pdf
-
-// https://github.com/focaltech-systems/drivers-input-touchscreen-FTS_driver/blob/master/ft5x06.c
 
 #include "Wire.h"
 
@@ -16,11 +12,10 @@
 #define NUM_TOUCHPOINTS   4
 
 // RAW
-#define NUM_COLUMNS       12 // Columns are doing the sensing
-#define NUM_ROWS          21// Row are doing the pull ground
+#define NUM_RX       	    12 // Columns are doing the sensing
+#define NUM_TX            21 // Row are doing the pull ground
 
 #define CTP_INT           2
-
 
 #define byte uint8_t
 
@@ -36,14 +31,11 @@ class TouchPoint {
     unsigned int speed;
 };
 
-enum MucaLine {LINE_TX, LINE_RX = NUM_ROWS};
-
 class Muca {
   public:
     Muca();
 
-    void init(bool interupt = true);
-    void skipLine(MucaLine line, const short lineNumber[], size_t size );
+    bool init(bool interrupt = true);
     
     //CHORE
     void setGain(int val);
@@ -56,28 +48,34 @@ class Muca {
     // TOUCH_CONFIG
     void setConfig(byte peak, byte cal, byte thresh, byte diff);
     void setResolution(unsigned short w, unsigned short h);
+    void selectLines(bool RX[NUM_RX], bool TX[NUM_TX]);
 
     // TOUCH
-    bool updated();
+    bool update();
     int getNumberOfTouches();
     TouchPoint getTouch(int i);
 
     //RAW
-    unsigned int grid[NUM_ROWS * NUM_COLUMNS];
+    unsigned int *grid;
     void useRawData(bool useRaw);
     void getRawData();
-    unsigned int getRawData(int col, int row);
+    unsigned int getRawData(int rx, int tx);
+    unsigned int num_TX=NUM_TX, num_RX = NUM_RX;
 
     // I2C
     byte readRegister(byte reg,short numberBytes);
     byte setRegister(byte reg, byte val);
+    void getRegisters(byte reg, byte size, byte * buffer);
+    int getRegister(byte reg);
+    int getFWVersion();
 
   private:
     //CHORE
     bool poll();
     bool isInit = false;
-    bool useInterrupt = true;
-    bool skippedLines[NUM_ROWS + NUM_COLUMNS]; // Maximum SkippedLines
+    bool useInterrupt = false;
+    bool RX_lines[NUM_RX] = {1,1,1,1,1,1,1,1,1,1,1,1}; 			 // RX Lines to skip
+    bool TX_lines[NUM_TX] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}; // TX lines to skip
 
     // TOUCH
     unsigned short width = 800;
