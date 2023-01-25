@@ -28,12 +28,13 @@ void setup() {
   //muca.printAllRegisters();
   muca.useRawData(true); // If you use the raw data mode, the interrupt will not work
   
-  muca.setGain(31);
+
+  muca.setGain(50);
   
   // Custom panels :
   // Put a "0" when physical rx or tx line is not connected, "1" instead
-  bool rx[]={1,1,1,1,1,1,1,1,1,1,1,1};
-  bool tx[]={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+  bool rx[]={1,1,1,1,1,1,1,1,1,0,0,0};
+  bool tx[]={1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0};
   muca.selectLines(rx, tx); // Comment this line to use the full panel
 #ifdef DEBUG
   Serial.print("Num_TX/Rows : ");
@@ -47,12 +48,14 @@ void setup() {
 
 void loop() {
 
+int gain;
+
 if (sync_state == 0) {
       while(!Serial.available()) {  // Sync
       Serial.print("RX:");Serial.print(muca.num_RX);Serial.print(":TX:");Serial.print(muca.num_TX);Serial.println(":SYNC");
       delay(500);
     }
-    Serial.read();
+    muca.setGain(Serial.read());
     sync_state = 1;
   }
 
@@ -71,7 +74,7 @@ if (sync_state == 0) {
         break;
       }
     }
-    Serial.read();
+    muca.setGain(Serial.read());
     //if(muca.num_RX*muca.num_TX < 150) {
      delay(16);    // Needed if panel size is small
     //}
