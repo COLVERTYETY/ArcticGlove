@@ -5,18 +5,73 @@ from PyQt5 import QtWidgets, QtCore
 from pyqtgraph import PlotWidget, plot
 import time
 import serial 
-
+import signal
+import sys
 
 #  on click on widget get x,y coordinates
-        
+def SignalHandler(sig, frame):
+    print("SignalHandler")
+
+    app.quit()
+    
+    sys.exit(0)
+
+
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.graphWidget = pg.PlotWidget()
-        self.setCentralWidget(self.graphWidget)
-        # widget for slider
+        
+
+        self.gain = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.gain.setMinimum(0)
+        self.gain.setMaximum(30)
+        self.gain.setValue(0)
+
+        self.gain.setTickInterval(1)
+     
+        self.treshold = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.treshold.setMinimum(0)
+        self.treshold.setMaximum(20)
+        self.treshold.setValue(0)
+        self.treshold.setTickInterval(1)
+        self.treshold.valueChanged.connect(self.tresholdChanged)
+
+        self.gain_label = QtWidgets.QLabel()
+        self.gain_label.setText("Gain: " + str(self.gain.value()))
+        
+        self.treshold_label = QtWidgets.QLabel()
+        self.treshold_label.setText("Treshold: " + str(self.treshold.value()))
+
         self.graphWidget.setBackground('w')
         self.graphWidget.scene().sigMouseClicked.connect(self.mouseClicked)
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.graphWidget)
+        layout.addWidget(self.gain)
+        layout.addWidget(self.gain_label)
+        layout.addWidget(self.treshold)
+        layout.addWidget(self.treshold_label)
+
+        self.gain.valueChanged.connect(self.gainChanged)
+        self.setLayout(layout)
+        # Create a central widget for the layout
+        central_widget = QtWidgets.QWidget()
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
+        
+        # Set the window title
+        self.setWindowTitle("Arctic Glove")
+
+        #Add a widget to modify the value of a variable
+        # self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        # self.slider.setMinimum(0)
+        # self.slider.setMaximum(100)
+        # self.slider.setValue(50)
+        # self.slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        # self.slider.setTickInterval(10)
+        # self.slider.valueChanged.connect(self.sliderChanged)
+        # self.slider.setFixedWidth(200)
+        # self.slider.setFixedHeight(50
         # self.data_line =  self.graphWidget.plot(self.delegate.times, self.delegate.vals, pen=pen)
 
         # self.timer2 = QtCore.QTimer()
@@ -30,12 +85,24 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ser = serial.Serial('/dev/ttyUSB0', 250000, timeout=0.1)
         self.sync = False
         self.calibration = []
-        self.cols = 12
-        self.rows = 12
-        self.cells = 21*12
+        #TO DEFINE
+        self.cols = 9
+        self.rows = 9
+
+        self.cells = self.cols*self.rows
         self.buffer = np.zeros(self.cells)
         self.mean = 10000
         self.std = 10000
+    
+    def tresholdChanged(self):
+        treshold = self.treshold.value()
+        self.treshold_label.setText("Treshold: " + str(treshold))
+        print(treshold)
+
+    def gainChanged(self):
+        gain = self.gain.value()
+        self.gain_label.setText("Gain: " + str(gain))
+        
 
     def mouseClicked(self, event):
         self.calibration = []
@@ -95,10 +162,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # while not self.sync:
         #     print("Syncing")
         self.readSync()
-        self.ser.write(b"s")
+        self.ser.write(str(self.gain.value()).encode())
 
     def update_plot_data(self):
-        self.ser.write(b"s")
+        gain_bytes = str(self.gain.value()).encode()
+        self.ser.write(gain_bytes)
+        #self.ser.write(b"s")
         # self.readByte()
         self.readString()
         #  reashaep the data
@@ -115,15 +184,23 @@ class MainWindow(QtWidgets.QMainWindow):
   
         # temp = np.clip(temp, 0, 1000)
         temp = temp - self.mean
-        temp[temp<0] = 0
-        image = pg.ImageItem(temp)
+        print(temp)
+        temp[temp<self.treshold.value()] = 0
+
+        #disable auto levels
+
+        image = pg.ImageItem(temp, autoLevels=False, autoRange=False, autoHistogramRange=False, levels=(0, 30))
         self.graphWidget.plotItem.clear()
         self.graphWidget.plotItem.addItem(image)
         # self.graphWidget.setImage(self.buffer, autoLevels=False, autoRange=False, autoHistogramRange=False, levels=(0, 1000))
         
 
 
-# start the Qt App
+#attach the signal
+signal.signal(signal.SIGINT, SignalHandler)
+
+
+
 app = QtWidgets.QApplication([])
 w = MainWindow()
 w.setup()
