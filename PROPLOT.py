@@ -5,24 +5,32 @@ from PyQt5 import QtWidgets, QtCore
 from pyqtgraph import PlotWidget, plot
 import time
 import serial 
-
+import signal
+import sys
 
 #  on click on widget get x,y coordinates
-        
+def SignalHandler(sig, frame):
+    print("SignalHandler")
+
+    app.quit()
+    
+    sys.exit(0)
+
+
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.graphWidget = pg.PlotWidget()
         
 
-        self.gain = QtWidgets.QSlider()
+        self.gain = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
         self.gain.setMinimum(0)
         self.gain.setMaximum(30)
         self.gain.setValue(0)
 
         self.gain.setTickInterval(1)
      
-        self.treshold = QtWidgets.QSlider()
+        self.treshold = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
         self.treshold.setMinimum(0)
         self.treshold.setMaximum(20)
         self.treshold.setValue(0)
@@ -74,7 +82,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.timer.setInterval(10)
         self.timer.timeout.connect(self.update_plot_data)
         self.timer.start()
-        self.ser = serial.Serial('/dev/cu.usbserial-0001', 250000, timeout=0.1)
+        self.ser = serial.Serial('/dev/ttyUSB0', 250000, timeout=0.1)
         self.sync = False
         self.calibration = []
         #TO DEFINE
@@ -179,14 +187,20 @@ class MainWindow(QtWidgets.QMainWindow):
         print(temp)
         temp[temp<self.treshold.value()] = 0
 
-        image = pg.ImageItem(temp)
+        #disable auto levels
+
+        image = pg.ImageItem(temp, autoLevels=False, autoRange=False, autoHistogramRange=False, levels=(0, 30))
         self.graphWidget.plotItem.clear()
         self.graphWidget.plotItem.addItem(image)
         # self.graphWidget.setImage(self.buffer, autoLevels=False, autoRange=False, autoHistogramRange=False, levels=(0, 1000))
         
 
 
-# start the Qt App
+#attach the signal
+signal.signal(signal.SIGINT, SignalHandler)
+
+
+
 app = QtWidgets.QApplication([])
 w = MainWindow()
 w.setup()

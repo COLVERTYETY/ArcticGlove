@@ -2,14 +2,16 @@
 #include <Arduino.h>
 #define DEBUG
 
+void SetGain();
+
 Muca muca;
 
 bool sync_state = 0;
 
 int last_sync = 0;
-
-int sync_timeout = 1000;
-
+int gain = 0;
+char buffer[4];
+int sync_timeout = 10000;
 void setup() {
   Serial.begin(250000);
 #ifdef DEBUG
@@ -29,12 +31,12 @@ void setup() {
   muca.useRawData(true); // If you use the raw data mode, the interrupt will not work
   
 
-  muca.setGain(50);
+  muca.setGain(20);
   
   // Custom panels :
   // Put a "0" when physical rx or tx line is not connected, "1" instead
-  bool rx[]={1,1,1,1,1,1,1,1,1,0,0,0};
-  bool tx[]={1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0};
+  bool rx[]={1,1,1,1,1,1,1,1,1,1,1,0};
+  bool tx[]={1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0};
   muca.selectLines(rx, tx); // Comment this line to use the full panel
 #ifdef DEBUG
   Serial.print("Num_TX/Rows : ");
@@ -55,7 +57,8 @@ if (sync_state == 0) {
       Serial.print("RX:");Serial.print(muca.num_RX);Serial.print(":TX:");Serial.print(muca.num_TX);Serial.println(":SYNC");
       delay(500);
     }
-    muca.setGain(Serial.read());
+    //SetGain();
+
     sync_state = 1;
   }
 
@@ -71,12 +74,34 @@ if (sync_state == 0) {
       if (millis() - last_sync > sync_timeout) {
         sync_state = 0;
         last_sync = millis();
+        if (millis() - last_sync > 0) {
+          Serial.println("SYNC TIMEOUT");
+        }
         break;
       }
     }
-    muca.setGain(Serial.read());
+    SetGain();
     //if(muca.num_RX*muca.num_TX < 150) {
      delay(16);    // Needed if panel size is small
     //}
   }
+}
+
+void SetGain() {
+
+    // Parse string to int
+
+    int i = 0;
+    while (Serial.available()) {
+      buffer[i] = (char) Serial.read();
+      i++;
+    }
+    buffer[i] = '\0';
+
+    int newgain = atoi(buffer);
+    if (newgain > 0 && newgain < 100 && newgain != gain) {
+      muca.setGain(newgain);
+      gain = newgain;
+    }
+    
 }
