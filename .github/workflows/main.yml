@@ -22,4 +22,3 @@ jobs:
 
       - name: Build PlatformIO Project
         run: cd ${{ github.workspace }}/esp32MUCASerial && pio run
-        run: pio run
