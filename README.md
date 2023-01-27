@@ -1,3 +1,5 @@
+[![PlatformIO CI](https://github.com/COLVERTYETY/ArcticGlove/actions/workflows/main.yml/badge.svg?event=push)](https://github.com/COLVERTYETY/ArcticGlove/actions/workflows/main.yml)
+
 # ArcticGlove
 This is the repo of the Arctic GLove project.
 
